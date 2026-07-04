@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AccessProof — EU Accessibility Act (EAA) compliance scanner for online stores</title>
+  <meta name="description" content="Scan your store for the WCAG 2.1 AA failures the European Accessibility Act requires you to fix. An accessibility overlay will not protect you — here is what a demand letter would find.">
+  <link rel="icon" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <p class="kicker">EU Accessibility Act · in force since 28 June 2025</p>
+      <h1>Does your store pass an accessibility demand letter?</h1>
+      <p class="sub">Scan your page for the real WCAG&nbsp;2.1&nbsp;AA failures the EAA requires you to fix — the same ones a lawyer runs in ten seconds. 100% in your browser; nothing is uploaded.</p>
+    </header>
+
+    <section class="overlay-truth" aria-label="Why overlays do not make you compliant">
+      <h2>An “accessibility widget” won’t save you</h2>
+      <p>Overlay tools (accessiBe, UserWay, AudioEye…) promise instant compliance. Courts disagree: the US FTC fined accessiBe <strong>$1,000,000</strong> in 2025 for that exact claim, and a large share of accessibility lawsuits target sites that already run one. Real conformance means fixing the underlying code.</p>
+    </section>
+
+    <section class="scan card" aria-label="Run a scan">
+      <label class="field-label" for="html-input">Paste your page’s HTML</label>
+      <p class="field-hint">In your browser: right-click the page → <em>View Page Source</em> → select all → copy → paste here.</p>
+      <textarea id="html-input" spellcheck="false" placeholder="<!doctype html> …"></textarea>
+      <div class="scan-actions">
+        <button id="scan-btn" class="btn btn-primary" type="button">Scan for failures</button>
+        <button id="sample-btn" class="btn btn-ghost" type="button">Try a sample store</button>
+      </div>
+      <p id="scan-status" class="scan-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <section id="results" class="results" hidden aria-label="Scan results"></section>
+
+    <section id="paid" class="paid card" hidden aria-label="Get a conformance report">
+      <h2>Get a demand-letter-grade report</h2>
+      <p class="paid-sub">The scan above finds what a machine can. A defensible <strong>conformance report</strong> also covers what it can’t — and gets the failures actually fixed.</p>
+      <ul id="paid-includes" class="paid-includes"></ul>
+      <p class="paid-price" id="paid-price"></p>
+      <button id="commission-btn" class="btn btn-primary" type="button">Commission a report</button>
+      <p id="commission-status" class="scan-status" role="status" aria-live="polite"></p>
+    </section>
+
+    <footer class="foot">
+      <p><strong>Honest scope:</strong> <span id="coverage-note"></span></p>
+      <p>AccessProof checks against WCAG&nbsp;2.1&nbsp;A/AA (EN&nbsp;301&nbsp;549), the standard the EU Accessibility Act points to. The engine is <a href="https://github.com/dequelabs/axe-core" rel="noopener">axe-core</a> (MPL-2.0). This tool is not legal advice.</p>
+    </footer>
+  </div>
+
+  <!-- Real accessibility engine (sets window.axe). Loaded before the app module. -->
+  <script src="vendor/axe.min.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

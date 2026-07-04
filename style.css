@@ -1,0 +1,161 @@
+/* AccessProof — professional, trustworthy, mobile-first. System font stack for
+   an iOS-native feel; a serious slate/indigo palette (this is a compliance tool,
+   not a toy). All colours here meet WCAG AA against their backgrounds — a tool
+   that scans for contrast failures must not ship any. */
+:root {
+  --ink: #14181f;
+  --ink-soft: #47505e;
+  --line: #e4e8ef;
+  --bg: #f6f8fb;
+  --surface: #ffffff;
+  --brand: #1f4fd8;        /* 6.3:1 on white */
+  --brand-ink: #163aa6;
+  --ok: #0f7a4f;
+  --warn-bg: #fff4e0;
+  --warn-ink: #8a4b00;     /* AA on --warn-bg */
+  --danger: #b42318;
+
+  --sev-critical: #b42318;
+  --sev-serious: #b5540a;
+  --sev-moderate: #8a6d00;
+  --sev-minor: #556070;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
+  --radius-sm: 8px; --radius-md: 12px; --radius-lg: 18px; --radius-pill: 999px;
+  --touch: 48px;
+  --ease: linear(0, 0.5 60%, 0.9 80%, 1.02 90%, 1);
+  --t-fast: 140ms;
+}
+@media (prefers-reduced-motion: reduce) { :root { --ease: ease; --t-fast: 1ms; } }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0; padding: 0; min-height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--ink); background: var(--bg);
+  font-size: 16px; line-height: 1.5;
+}
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-sm); }
+
+.shell {
+  max-width: 720px; margin: 0 auto;
+  padding: max(var(--space-8), env(safe-area-inset-top)) var(--space-4)
+           max(var(--space-10), env(safe-area-inset-bottom));
+}
+
+.hero { text-align: center; margin-bottom: var(--space-6); }
+.kicker {
+  display: inline-block; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--brand-ink); background: #e9efff; padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill); margin: 0 0 var(--space-4);
+}
+.hero h1 { font-size: 1.7rem; line-height: 1.2; margin: 0 0 var(--space-3); letter-spacing: -0.01em; }
+.hero .sub { color: var(--ink-soft); margin: 0 auto; max-width: 34rem; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: var(--space-5); }
+
+.overlay-truth {
+  background: var(--warn-bg); border: 1px solid #f2d9a8; border-radius: var(--radius-lg);
+  padding: var(--space-4) var(--space-5); margin-bottom: var(--space-5);
+}
+.overlay-truth h2 { font-size: 1.05rem; margin: 0 0 var(--space-2); color: var(--warn-ink); }
+.overlay-truth p { margin: 0; color: #5c4a2a; font-size: 0.95rem; }
+
+.scan { margin-bottom: var(--space-6); }
+.field-label { display: block; font-weight: 700; margin-bottom: var(--space-1); }
+.field-hint { margin: 0 0 var(--space-3); color: var(--ink-soft); font-size: 0.85rem; }
+.field-hint em { font-style: normal; font-weight: 600; color: var(--ink); }
+#html-input {
+  width: 100%; min-height: 150px; resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; line-height: 1.45;
+  color: var(--ink); background: #fbfcfe; border: 1px solid var(--line);
+  border-radius: var(--radius-md); padding: var(--space-3);
+}
+#html-input:focus { border-color: var(--brand); }
+
+.scan-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-4); }
+.btn {
+  font: inherit; font-weight: 700; min-height: var(--touch);
+  padding: var(--space-3) var(--space-5); border-radius: var(--radius-md);
+  border: 1px solid transparent; cursor: pointer;
+  transition: transform var(--t-fast) var(--ease), background var(--t-fast) var(--ease);
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.6; cursor: default; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-ink); }
+.btn-ghost { background: #eef2f9; color: var(--brand-ink); border-color: var(--line); }
+
+.scan-status { margin: var(--space-3) 0 0; color: var(--ink-soft); font-size: 0.9rem; min-height: 1.2em; }
+.scan-status.is-error { color: var(--danger); font-weight: 600; }
+
+.results { margin-top: var(--space-6); display: flex; flex-direction: column; gap: var(--space-4); }
+
+.risk-banner { border-radius: var(--radius-lg); padding: var(--space-5); border: 1px solid var(--line); }
+.risk-banner.tone-high { background: #fdecea; border-color: #f3c0ba; }
+.risk-banner.tone-elevated { background: #fef1e2; border-color: #f2d3a6; }
+.risk-banner.tone-moderate { background: #fdf8e1; border-color: #ece0a4; }
+.risk-banner.tone-low { background: #e9f7ef; border-color: #b9e2ca; }
+.risk-band { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: var(--space-2); }
+.tone-high .risk-band { color: var(--sev-critical); }
+.tone-elevated .risk-band { color: var(--sev-serious); }
+.tone-moderate .risk-band { color: var(--sev-moderate); }
+.tone-low .risk-band { color: var(--ok); }
+.risk-head { font-size: 1.1rem; font-weight: 700; margin: 0 0 var(--space-2); }
+.risk-meaning { margin: 0; color: var(--ink-soft); font-size: 0.92rem; }
+
+.overlay-hit {
+  background: #fdecea; border: 1px solid #f3c0ba; border-radius: var(--radius-md);
+  padding: var(--space-4); font-size: 0.92rem; color: #6b1c14;
+}
+.overlay-hit strong { color: var(--sev-critical); }
+
+.counts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: 0.85rem; color: var(--ink-soft); padding: 0 var(--space-1); }
+.count b { color: var(--ink); font-size: 1rem; }
+
+.issues { display: flex; flex-direction: column; gap: var(--space-3); }
+.issue { border: 1px solid var(--line); border-left: 4px solid var(--sev-minor); border-radius: var(--radius-md); padding: var(--space-4); background: var(--surface); }
+.issue-critical { border-left-color: var(--sev-critical); }
+.issue-serious { border-left-color: var(--sev-serious); }
+.issue-moderate { border-left-color: var(--sev-moderate); }
+.issue-minor { border-left-color: var(--sev-minor); }
+.issue-head { display: flex; align-items: baseline; gap: var(--space-2); flex-wrap: wrap; }
+.issue-sev { font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px var(--space-2); border-radius: var(--radius-pill); color: #fff; }
+.sev-critical { background: var(--sev-critical); }
+.sev-serious { background: var(--sev-serious); }
+.sev-moderate { background: var(--sev-moderate); }
+.sev-minor { background: var(--sev-minor); }
+.issue-title { font-size: 1.02rem; margin: 0; }
+.issue-meta { font-size: 0.82rem; color: var(--ink-soft); margin: var(--space-2) 0 var(--space-3); }
+.issue p { margin: 0 0 var(--space-2); font-size: 0.92rem; }
+.issue p span { font-weight: 700; color: var(--ink); }
+.issue-affects { color: var(--ink-soft); }
+.issue-risk { color: var(--ink-soft); }
+.issue-fix { color: var(--ink); }
+.issue-where code { background: #eef2f9; padding: 1px 6px; border-radius: 6px; font-size: 0.8rem; }
+.issue-link a { color: var(--brand-ink); font-weight: 600; font-size: 0.85rem; }
+.clean-note { background: #e9f7ef; border: 1px solid #b9e2ca; border-radius: var(--radius-md); padding: var(--space-4); margin: 0; color: #1c5c3d; }
+
+.advisory { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.advisory summary { cursor: pointer; padding: var(--space-3) var(--space-4); font-weight: 600; min-height: var(--touch); display: flex; align-items: center; }
+.advisory-list { display: flex; flex-direction: column; gap: var(--space-3); padding: 0 var(--space-4) var(--space-4); }
+
+.coverage-inline { font-size: 0.85rem; color: var(--ink-soft); background: #eef2f9; border-radius: var(--radius-md); padding: var(--space-3) var(--space-4); margin: 0; }
+
+.paid { margin-top: var(--space-6); border-color: #c9d6f2; }
+.paid h2 { margin: 0 0 var(--space-2); font-size: 1.2rem; }
+.paid-sub { color: var(--ink-soft); margin: 0 0 var(--space-4); }
+.paid-includes { margin: 0 0 var(--space-4); padding-left: var(--space-5); color: var(--ink); }
+.paid-includes li { margin-bottom: var(--space-2); font-size: 0.92rem; }
+.paid-price { font-weight: 800; font-size: 1.1rem; margin: 0 0 var(--space-4); color: var(--brand-ink); }
+
+.foot { margin-top: var(--space-10); padding-top: var(--space-5); border-top: 1px solid var(--line); color: var(--ink-soft); font-size: 0.82rem; }
+.foot p { margin: 0 0 var(--space-3); }
+.foot a { color: var(--brand-ink); }
+
+@media (min-width: 640px) {
+  .hero h1 { font-size: 2.1rem; }
+}
