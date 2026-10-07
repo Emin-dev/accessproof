@@ -23,7 +23,7 @@
 
     <section class="scan card" aria-label="Run a scan">
       <label class="field-label" for="html-input">Paste your page’s HTML</label>
-      <p class="field-hint">In your browser: right-click the page → <em>View Page Source</em> → select all → copy → paste here.</p>
+      <p class="field-hint">In your browser: right-click the page → <em>View Page Source</em> → select all → copy → paste here. Static HTML and inline styles are checked in an isolated sandbox; scripts, embedded pages and external resources are blocked, so this does not reproduce the full live page.</p>
       <textarea id="html-input" spellcheck="false" placeholder="<!doctype html> …"></textarea>
       <div class="scan-actions">
         <button id="scan-btn" class="btn btn-primary" type="button">Scan for failures</button>
@@ -49,8 +49,7 @@
     </footer>
   </div>
 
-  <!-- Real accessibility engine (sets window.axe). Loaded before the app module. -->
-  <script src="vendor/axe.min.js"></script>
+  <!-- The vendored accessibility engine loads only inside each isolated scan. -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

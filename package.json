@@ -1,0 +1,14 @@
+{
+  "name": "accessproof",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local, isolated accessibility checks for static HTML snapshots.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test/report.test.mjs && node test/sanitize.test.mjs",
+    "test:browser": "playwright test"
+  },
+  "engines": { "node": ">=22" },
+  "devDependencies": { "@playwright/test": "1.64.0" }
+}
