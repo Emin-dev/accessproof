@@ -19,12 +19,14 @@ function esc(s) {
 
 function setBusy(busy, msg) {
   scanBtn.disabled = busy;
+  sampleBtn.disabled = busy;
   scanBtn.textContent = busy ? 'Scanning…' : 'Scan for failures';
   scanStatus.textContent = msg || '';
   scanStatus.classList.toggle('is-error', false);
 }
 function setError(msg) {
   scanBtn.disabled = false;
+  sampleBtn.disabled = false;
   scanBtn.textContent = 'Scan for failures';
   scanStatus.textContent = msg;
   scanStatus.classList.add('is-error');

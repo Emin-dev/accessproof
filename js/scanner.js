@@ -1,101 +1,99 @@
-// AccessProof — browser scanner. Renders user-supplied HTML in an isolated,
-// same-origin iframe and runs the real axe-core engine INSIDE that frame.
-// Nothing is ever sent anywhere: the scan is 100% local to the browser tab.
-//
-// Why in-frame: running the parent's axe against a *different* frame's document
-// makes axe hang on cross-frame messaging. Loading axe into the target frame and
-// running it there is the reliable, supported approach.
-
-// Absolute URL to the vendored engine, resolved against this module's location
-// so it works from any page path.
+// Pasted markup never enters the application document. Each scan runs in a
+// fresh opaque-origin sandbox; only the trusted engine/bridge can run scripts.
 const AXE_URL = new URL('../vendor/axe.min.js', import.meta.url).href;
+const BRIDGE_URL = new URL('./scanner-frame.js', import.meta.url).href;
+export const MAX_HTML_LENGTH = 1_000_000;
+const SCAN_TIMEOUT_MS = 15000;
+const CHANNEL = 'accessproof-scan';
 
-const AXE_OPTIONS = {
-  // WCAG 2.1 A/AA is what EN 301 549 (and therefore the EAA) requires. We also
-  // keep best-practice rules so the report can show advisory items separately.
-  runOnly: {
-    type: 'tag',
-    values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'],
-  },
-};
+const escapeAttribute = (value) => String(value).replace(/[&<>"']/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// Strip anything executable before rendering: the frame is NOT sandboxed (so axe
-// and computed styles work natively), so we must guarantee the pasted markup
-// can't run code. Remove <script>, inline on*="" handlers, and javascript: URLs.
-export function sanitizeHtml(html) {
-  return String(html)
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, '')
-    .replace(/<script\b[^>]*\/?>/gi, '')
-    .replace(/\son\w+\s*=\s*"[^"]*"/gi, '')
-    .replace(/\son\w+\s*=\s*'[^']*'/gi, '')
-    .replace(/\son\w+\s*=\s*[^\s>]+/gi, '')
-    .replace(/(href|src)\s*=\s*("|')\s*javascript:[^"']*\2/gi, '$1=$2#$2');
+// This shell contains trusted code URLs only. HTML arrives later as message
+// data, so malformed markup cannot break out of an embedded script/string.
+export function createScanDocument(token, parentOrigin) {
+  if (!/^[a-f0-9]{64}$/.test(token)) throw new Error('Invalid scan token.');
+  const policy = `default-src 'none'; script-src 'nonce-${token}'; ` +
+    "style-src 'unsafe-inline'; img-src data:; font-src data:; " +
+    "base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'; connect-src 'none'";
+  return `<!doctype html><html><head><meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="${escapeAttribute(policy)}">
+<meta name="referrer" content="no-referrer">
+<script nonce="${token}" src="${escapeAttribute(AXE_URL)}"></script>
+<script nonce="${token}" data-scan-token="${token}" data-parent-origin="${escapeAttribute(parentOrigin)}" src="${escapeAttribute(BRIDGE_URL)}"></script>
+</head><body></body></html>`;
 }
 
-// Render sanitized HTML into a fresh same-origin iframe, inject axe into it, and
-// resolve with the frame's window/document once axe is ready. The frame is
-// rendered genuinely on-screen (1024x768) but at z-index:-1 behind the opaque
-// page — so axe's contrast/visibility checks see real computed styles while the
-// user sees nothing. (visibility:hidden / display:none / off-screen would make
-// axe skip colour-contrast entirely.)
-function renderAndArm(html) {
+const stringList = (value) => Array.isArray(value) && value.every((v) => typeof v === 'string');
+const targetList = (value) => Array.isArray(value) && value.every((v) =>
+  typeof v === 'string' || stringList(v));
+const issueList = (value) => Array.isArray(value) && value.every((issue) =>
+  issue && typeof issue.id === 'string' && typeof issue.help === 'string' &&
+  ['minor', 'moderate', 'serious', 'critical', null].includes(issue.impact) &&
+  stringList(issue.tags) && typeof issue.helpUrl === 'string' &&
+  /^https:\/\/dequeuniversity\.com\//.test(issue.helpUrl) &&
+  Array.isArray(issue.nodes) && issue.nodes.every((node) => node && targetList(node.target)));
+
+// An opaque frame's origin is "null", which is not an identity. Bind every
+// message to this exact WindowProxy and an unpredictable per-scan token too.
+export function isScanMessage(event, source, token) {
+  const data = event.data;
+  if (!source || event.source !== source || event.origin !== 'null' ||
+      !data || typeof data !== 'object' || Array.isArray(data) ||
+      data.channel !== CHANNEL || data.token !== token) return false;
+  if (data.type === 'ready') return true;
+  if (data.type === 'error') return typeof data.message === 'string' && data.message.length <= 300;
+  const result = data.result;
+  return data.type === 'result' && result && typeof result === 'object' &&
+    issueList(result.violations) && issueList(result.passes) && issueList(result.incomplete) &&
+    typeof result.testEngine?.version === 'string';
+}
+
+export function scanHtml(html) {
+  const trimmed = String(html ?? '').trim();
+  if (!trimmed) return Promise.reject(new Error('Paste your page HTML first.'));
+  if (trimmed.length > MAX_HTML_LENGTH) return Promise.reject(new Error('Paste a smaller page (up to 1,000,000 characters).'));
+
   return new Promise((resolve, reject) => {
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32)),
+      (byte) => byte.toString(16).padStart(2, '0')).join('');
     const iframe = document.createElement('iframe');
+    iframe.setAttribute('sandbox', 'allow-scripts'); // Never add allow-same-origin.
+    iframe.setAttribute('referrerpolicy', 'no-referrer');
     iframe.setAttribute('aria-hidden', 'true');
+    iframe.setAttribute('tabindex', '-1');
     iframe.setAttribute('title', 'accessproof-scan-target');
+    // Keep real layout for axe's visibility/contrast checks, behind the UI.
     iframe.style.cssText =
       'position:fixed;top:0;left:0;width:1024px;height:768px;border:0;z-index:-1;pointer-events:none;';
-    document.body.appendChild(iframe);
-
-    const cleanup = () => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); };
-    const fail = (msg) => { clearTimeout(timer); cleanup(); reject(new Error(msg)); };
-
-    const timer = setTimeout(
-      () => fail('The scan took too long. Try pasting less, or only the <body> content.'),
-      15000,
-    );
-
+    let started = false;
+    const cleanup = () => {
+      clearTimeout(timer);
+      window.removeEventListener('message', receive);
+      iframe.remove();
+    };
+    const fail = (message) => { cleanup(); reject(new Error(message)); };
+    const receive = (event) => {
+      if (!isScanMessage(event, iframe.contentWindow, token)) return;
+      const data = event.data;
+      if (data.type === 'ready' && !started) {
+        started = true;
+        // Opaque origins require '*'; the exact target window is already bound.
+        iframe.contentWindow.postMessage({ channel: CHANNEL, token, type: 'scan', html: trimmed }, '*');
+      } else if (data.type === 'error') {
+        fail(data.message);
+      } else if (data.type === 'result' && started) {
+        cleanup();
+        resolve(data.result);
+      }
+    };
+    const timer = setTimeout(() => fail('The scan took too long. Try pasting less, or only the <body> content.'), SCAN_TIMEOUT_MS);
+    window.addEventListener('message', receive);
     try {
-      const doc = iframe.contentDocument;
-      doc.open();
-      doc.write(sanitizeHtml(html));
-      doc.close();
-      if (!doc.documentElement) throw new Error('empty');
-
-      // Inject axe into the frame and run it in the frame's own context.
-      const s = doc.createElement('script');
-      s.src = AXE_URL;
-      s.onload = () => {
-        clearTimeout(timer);
-        // Let inline <style> apply + layout settle before contrast reads styles.
-        // Use setTimeout, not requestAnimationFrame: in a backgrounded/occluded
-        // tab rAF is paused and would never fire, hanging the scan.
-        setTimeout(() => {
-          if (iframe.contentWindow && iframe.contentWindow.axe) {
-            resolve({ win: iframe.contentWindow, doc, cleanup });
-          } else {
-            fail('The accessibility engine did not initialise. Reload and try again.');
-          }
-        }, 60);
-      };
-      s.onerror = () => fail('The accessibility engine failed to load. Reload and try again.');
-      (doc.head || doc.documentElement).appendChild(s);
+      iframe.srcdoc = createScanDocument(token, window.location.origin);
+      document.body.appendChild(iframe);
     } catch {
-      fail('Could not read the pasted markup. Make sure you copied real HTML.');
+      fail('Could not start the isolated scan. Reload and try again.');
     }
   });
-}
-
-// Scan a string of HTML. Resolves with axe's raw results object
-// { violations, passes, incomplete, ... }. Rejects with a friendly Error.
-export async function scanHtml(html) {
-  const trimmed = (html || '').trim();
-  if (!trimmed) throw new Error('Paste your page HTML first.');
-
-  const { win, doc, cleanup } = await renderAndArm(trimmed);
-  try {
-    return await win.axe.run(doc, AXE_OPTIONS);
-  } finally {
-    cleanup();
-  }
 }
